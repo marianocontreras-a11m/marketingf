@@ -1,0 +1,32 @@
+Estado,Region,Participacion,Leads_estimados,Conversion_%,Leads_convertidos
+Ciudad de Mexico,Centro,0.26799,7434,26.8,1992
+Jalisco,Occidente,0.05258,1458,5.26,77
+Nuevo León,Noreste,0.0499,1384,4.99,69
+Puebla,Centro,0.04396,1219,4.4,54
+Veracruz,Golfo,0.0436,1209,4.36,53
+Estado de México,Centro,0.03859,1070,3.86,41
+Guanajuato,Bajío,0.03797,1053,3.8,40
+Chiapas,Sur,0.03528,979,3.53,35
+Coahuila,Noreste,0.03082,855,3.08,26
+Sonora,Noroeste,0.03006,834,3.01,25
+Chihuahua,Noroeste,0.02938,815,2.94,24
+Oaxaca,Sur,0.02931,813,2.93,24
+Michoacán,Otras,0.027,749,2.7,20
+Hidalgo,Centro,0.02618,726,2.62,19
+Querétaro,Bajío,0.02348,651,2.35,15
+Tamaulipas,Noreste,0.02293,636,2.29,15
+Sinaloa,Noroeste,0.02256,626,2.26,14
+Quintana Roo,Sureste,0.02117,587,2.12,12
+San Luis Potosí,Bajío,0.01694,470,1.69,8
+Yucatán,Sureste,0.0176,488,1.76,9
+Guerrero,Sur,0.01859,516,1.86,10
+Tabasco,Golfo,0.01836,509,1.84,9
+Morelos,Centro,0.01528,424,1.53,6
+Durango,Noroeste,0.00961,267,0.96,3
+Aguascalientes,Bajío,0.00899,249,0.9,2
+Baja California Sur,Noroeste,0.00806,224,0.81,2
+Campeche,Sur,0.00767,213,0.77,2
+Tlaxcala,Centro,0.00743,206,0.74,2
+Zacatecas,Bajío,0.0074,205,0.74,2
+Nayarit,Occidente,0.00666,185,0.67,1
+Colima,Occidente,0.00587,163,0.59,1
