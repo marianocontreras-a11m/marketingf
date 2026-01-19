@@ -9,7 +9,7 @@ import altair as alt
 # ============================================
 st.set_page_config(
     page_title="Pricing por Estado · Factor X",
-    page_icon="💰",
+    page_icon="null",
     layout="wide"
 )
 
@@ -31,18 +31,23 @@ hr { margin: 0.8rem 0; }
 st.title("Dashboard de Pricing por Estado · Modelo Factor X")
 
 # =====================================================
-# CARGA DE DATOS
+# CARGA DE DATOS (USUARIO SUBE CSV)
 # =====================================================
-DEFAULT_CSV_PATH = "/Users/maimai/Documents/camp_mkt1/estado_master.csv"
+st.sidebar.header("📂 Carga de datos")
+
+uploaded_file = st.sidebar.file_uploader(
+    "Sube el archivo estado_master.csv",
+    type=["csv"]
+)
 
 @st.cache_data(show_spinner=False)
-def load_data(path):
-    df = pd.read_csv(path)
+def load_data(file):
+    df = pd.read_csv(file)
 
     # Normalizar nombre de columna
     df = df.rename(columns={"Conversion_%": "Conversion_Rate"})
 
-    # Si viene en texto con comas → limpiar
+    # Limpiar conversión si viene como texto
     df["Conversion_Rate"] = (
         df["Conversion_Rate"]
         .astype(str)
@@ -53,18 +58,17 @@ def load_data(path):
 
     return df
 
-try:
-    df = load_data(DEFAULT_CSV_PATH)
-except:
-    st.error("❌ No se pudo cargar el archivo estado_master.csv")
+if uploaded_file is None:
+    st.info("⬅️ Sube un archivo CSV para comenzar.")
     st.stop()
 
+df = load_data(uploaded_file)
+
 # =====================================================
-# AJUSTE AUTOMÁTICO DE CONVERSIÓN (Opción 2)
+# AJUSTE AUTOMÁTICO DE CONVERSIÓN
 # =====================================================
 OBJETIVO = 0.028  # 2.8%
 
-# Amortiguación por región para variabilidad real
 region_factor = {
     "Centro": 0.92,
     "Occidente": 1.05,
@@ -78,14 +82,12 @@ region_factor = {
 
 df["Factor_regional"] = df["Region"].map(region_factor).fillna(1.00)
 
-# Ajustar conversiones exageradas (ej. 36%)
 df["Conversion_Rate"] = np.where(
-    df["Conversion_Rate"] > 5.0,     # si vienen datos enormes
-    OBJETIVO * df["Factor_regional"] * 100,   # convertir a %
+    df["Conversion_Rate"] > 5.0,
+    OBJETIVO * df["Factor_regional"] * 100,
     df["Conversion_Rate"]
 )
 
-# Recalcular leads convertidos
 df["Leads_convertidos"] = (
     df["Leads_estimados"] * (df["Conversion_Rate"] / 100)
 ).round().astype(int)
@@ -100,15 +102,20 @@ precio_ideal_global = st.sidebar.number_input(
 )
 
 factor_x = st.sidebar.slider(
-    "Factor X (ancho de banda de ajuste)",
+    "Factor X (ancho de banda)",
     0.02, 0.20, 0.05, 0.01
 )
 
 # Filtro por estado
 estados = sorted(df["Estado"].unique())
-sel_estados = st.sidebar.multiselect("Filtrar por estados", estados, default=estados)
+sel_estados = st.sidebar.multiselect(
+    "Filtrar por estados",
+    estados,
+    default=estados
+)
 
 df_f = df[df["Estado"].isin(sel_estados)].copy()
+
 if df_f.empty:
     st.warning("⚠️ No hay datos para los estados seleccionados.")
     st.stop()
@@ -131,20 +138,26 @@ c4.metric("Estados activos", f"{len(sel_estados)}")
 # =====================================================
 st.subheader("Leads y conversión por estado")
 
-summary = df_f[["Estado", "Region", "Leads_estimados", "Conversion_Rate", "Leads_convertidos"]].copy()
+summary = df_f[[
+    "Estado", "Region", "Leads_estimados",
+    "Conversion_Rate", "Leads_convertidos"
+]]
 
 chart = alt.Chart(summary).mark_bar().encode(
     x=alt.X("Estado:N", sort="-y"),
     y=alt.Y("Leads_estimados:Q", title="Leads"),
     color="Region:N",
-    tooltip=["Estado", "Region", "Leads_estimados", "Conversion_Rate", "Leads_convertidos"]
+    tooltip=list(summary.columns)
 ).properties(height=400)
 
 st.altair_chart(chart, use_container_width=True)
-st.dataframe(summary.sort_values("Leads_estimados", ascending=False), use_container_width=True)
+st.dataframe(
+    summary.sort_values("Leads_estimados", ascending=False),
+    use_container_width=True
+)
 
 # =====================================================
-# PRECIOS RECOMENDADOS POR ESTADO
+# PRECIOS RECOMENDADOS
 # =====================================================
 st.subheader("Recomendación de precio por estado")
 
@@ -158,31 +171,28 @@ st.dataframe(
 )
 
 # =====================================================
-# SIMULADOR DE PRECIO POR ESTADO (FUNCIONAL)
+# SIMULADOR
 # =====================================================
 st.subheader("Simulador de precio por estado")
 
 estado_sim = st.selectbox("Selecciona un estado", sel_estados)
-
 row = df_f[df_f["Estado"] == estado_sim].iloc[0]
+
 conv_base = row["Conversion_Rate"] / 100
 leads_estado = row["Leads_estimados"]
 
-precio_ideal = precio_ideal_global
-baja = precio_ideal * (1 - factor_x)
-alta = precio_ideal * (1 + factor_x)
-
 precio_propuesto = st.number_input(
-    "Precio propuesto (MXN)", value=float(precio_ideal), step=10.0
+    "Precio propuesto (MXN)",
+    value=float(precio_ideal_global),
+    step=10.0
 )
 
-gap = (precio_propuesto - precio_ideal) / precio_ideal * 100
+gap = (precio_propuesto - precio_ideal_global) / precio_ideal_global * 100
 
-# Elasticidad económica real
-if precio_propuesto < baja:
+if precio_propuesto < df_f["Banda_Baja"].iloc[0]:
     mult = 1 + min(0.4, abs(gap) / 10 * 0.2)
     mensaje = "📉 Precio bajo → posible mejora en conversión"
-elif precio_propuesto > alta:
+elif precio_propuesto > df_f["Banda_Alta"].iloc[0]:
     mult = 1 - min(0.4, abs(gap) / 10 * 0.2)
     mensaje = "📈 Precio alto → posible caída en conversión"
 else:
